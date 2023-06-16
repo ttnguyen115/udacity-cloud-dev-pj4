@@ -23,11 +23,10 @@ provider:
   # Use these variables in the functions and resources section below. For example,
   # ${self:provider.environment.ATTACHMENT_S3_BUCKET}
   environment:
-    TODOS_TABLE: 798732081680-trungnt102-${self:provider.stage}
+    TODOS_TABLE: 798732081680-trungnt102-pj4-${self:provider.stage}
     TODOS_CREATED_AT_INDEX: CreatedAtIndex
     ATTACHMENT_S3_BUCKET: 798732081680-trungnt102-images-${self:provider.stage}
     SIGNED_URL_EXPIRATION: 300
-    TODO_ID_INDEX: TodoIdIndex
     PROJECT_NAME: 798732081680-trungnt102
     INDEX_NAME: ${self:provider.environment.TODOS_CREATED_AT_INDEX}
 
@@ -190,8 +189,8 @@ functions:
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
       - Effect: Allow
         Action:
-          - xray:PutTraceSegments
-          - xray:PutTelemetryRecords
+          - "xray:PutTraceSegments"
+          - "xray:PutTelemetryRecords"
         Resource:
           - "*"
 
@@ -230,7 +229,7 @@ resources:
         BillingMode: PAY_PER_REQUEST
         TableName: ${self:provider.environment.TODOS_TABLE}
         LocalSecondaryIndexes:
-          - IndexName: ${self:provider.environment.TODO_ID_INDEX}
+          - IndexName: ${self:provider.environment.TODOS_CREATED_AT_INDEX}
             KeySchema:
               - AttributeName: userId
                 KeyType: HASH

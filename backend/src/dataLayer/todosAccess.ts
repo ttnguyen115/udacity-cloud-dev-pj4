@@ -15,8 +15,7 @@ const attachmentUtils = new AttachmentUtils()
 export class TodosAccess {
   constructor(
     private readonly docClient: DocumentClient = new XAWS.DynamoDB.DocumentClient(),
-    private readonly todosTable = process.env.TODOS_TABLE,
-    private readonly todosIndex = process.env.INDEX_NAME
+    private readonly todosTable = process.env.TODOS_TABLE
   ) {}
 
   async getTodosForUser(userId: string): Promise<TodoItem[]> {
@@ -43,12 +42,7 @@ export class TodosAccess {
     try {
       const result = await this.docClient
         .query({
-          TableName: this.todosTable,
-          IndexName: this.todosIndex,
-          KeyConditionExpression: 'userId = :userId',
-          ExpressionAttributeValues: {
-            ':userId': userId
-          }
+          TableName: this.todosTable
         })
         .promise()
       logger.info('getAllTodos done', { userId })
@@ -66,13 +60,11 @@ export class TodosAccess {
   ): Promise<TodoItem> {
     logger.info('Running createTodoItem')
     const createdAt = new Date().toISOString()
-    const s3AttachmentUrl = attachmentUtils.getAttachmentUrl(todoId)
     const newItem = {
       userId,
       todoId,
       createdAt,
       done: false,
-      attachmentUrl: s3AttachmentUrl,
       ...newTodo
     }
 
@@ -146,27 +138,25 @@ export class TodosAccess {
     }
   }
 
-  async updateTodoAttachmentUrl(
-    todoId: string,
-    userId: string,
-    attachmentUrl: string
-  ): Promise<void> {
+  async updateTodoAttachmentUrl(todoId: string, userId: string): Promise<void> {
     logger.info('Running updateTodoAttachmentUrl')
+    const s3AttachmentUrl = attachmentUtils.getAttachmentUrl(todoId)
     try {
       await this.docClient
         .update({
           TableName: this.todosTable,
           Key: {
-            todoId,
-            userId
+            userId,
+            todoId
           },
           UpdateExpression: 'set attachmentUrl = :attachmentUrl',
           ExpressionAttributeValues: {
-            ':attachmentUrl': attachmentUrl
-          }
+            ':attachmentUrl': s3AttachmentUrl
+          },
+          ReturnValues: 'UPDATED_NEW'
         })
         .promise()
-      logger.info('updateTodoAttachmentUrl done', { userId, todoId })
+      logger.info('updateTodoAttachmentUrl done', { userId, todoId, s3AttachmentUrl })
     } catch (error) {
       logger.error('Failed to updateTodoAttachmentUrl: ', error)
     }
